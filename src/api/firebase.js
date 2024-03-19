@@ -1,6 +1,13 @@
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "firebase/auth";
+import { v4 as uuidv4 } from "uuid";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, child, get } from "firebase/database";
+import { getDatabase, ref, get, set } from "firebase/database";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_APP_FIREBASE_API_KEY,
@@ -19,7 +26,9 @@ export function login() {
 }
 
 export function logout() {
-  signOut(auth).then(() => null).catch(console.error);
+  signOut(auth)
+    .then(() => null)
+    .catch(console.error);
 }
 
 export function onUserStateChange(callback) {
@@ -30,14 +39,24 @@ export function onUserStateChange(callback) {
 }
 
 async function adminUser(user) {
-  return get(ref(database, 'admins'))
-    .then((snapshot) => {
-      if (snapshot.exists) {
-        const admins = snapshot.val();
-        const isAdmin = admins.includes(user.uid);
-        return {...user, isAdmin};
-      }
+  return get(ref(database, "admins")).then((snapshot) => {
+    if (snapshot.exists) {
+      const admins = snapshot.val();
+      const isAdmin = admins.includes(user.uid);
+      return { ...user, isAdmin };
+    }
 
-      return user;
-  })
+    return user;
+  });
+}
+
+export async function addNewProduct(product, image) {
+  const id = uuidv4();
+  set(ref(database, `products/${id}`), {
+    ...product,
+    id,
+    image,
+    price: parseInt(product.price),
+    options: product.options.split(","),
+  });
 }
